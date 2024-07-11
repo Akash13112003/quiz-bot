@@ -1,6 +1,4 @@
-
 from .constants import BOT_WELCOME_MESSAGE, PYTHON_QUESTION_LIST
-
 
 def generate_bot_responses(message, session):
     bot_responses = []
@@ -27,26 +25,42 @@ def generate_bot_responses(message, session):
 
     return bot_responses
 
-
 def record_current_answer(answer, current_question_id, session):
     '''
     Validates and stores the answer for the current question to django session.
     '''
+    answers = session.get("answers", {})
+    answers[current_question_id] = answer
+    session["answers"] = answers
     return True, ""
-
 
 def get_next_question(current_question_id):
     '''
     Fetches the next question from the PYTHON_QUESTION_LIST based on the current_question_id.
     '''
+    if current_question_id is None:
+        next_question_id = 0
+    else:
+        next_question_id = current_question_id + 1
 
-    return "dummy question", -1
-
+    if next_question_id < len(PYTHON_QUESTION_LIST):
+        next_question = PYTHON_QUESTION_LIST[next_question_id]
+        return next_question, next_question_id
+    else:
+        return None, None
 
 def generate_final_response(session):
     '''
     Creates a final result message including a score based on the answers
     by the user for questions in the PYTHON_QUESTION_LIST.
     '''
+    answers = session.get("answers", {})
+    score = 0
+    for question_id, user_answer in answers.items():
+        correct_answer = PYTHON_QUESTION_LIST[question_id]["correct_answer"]
+        if user_answer == correct_answer:
+            score += 1
 
-    return "dummy result"
+    total_questions = len(PYTHON_QUESTION_LIST)
+    result_message = f"You answered {score} out of {total_questions} questions correctly."
+    return result_message
